@@ -1,0 +1,1108 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>一建刷题 · AI 题库</title>
+<script src="zhenti-data.js"></script>
+<style>
+  :root { --primary:#1A237E; --accent:#FF6F00; --ok:#2E7D32; --err:#C62828; --bg:#F5F6FA; --card:#FFFFFF; --text:#212121; --muted:#757575; }
+  * { margin:0; padding:0; box-sizing:border-box; -webkit-tap-highlight-color:transparent; }
+  body { font-family:"Microsoft YaHei","PingFang SC",sans-serif; background:var(--bg); color:var(--text); max-width:520px; margin:0 auto; padding-bottom:70px; }
+  header { background:linear-gradient(135deg,#1A237E,#283593); color:#fff; padding:16px 16px 14px; position:sticky; top:0; z-index:10; }
+  header h1 { font-size:18px; font-weight:700; }
+  header .sub { font-size:12px; opacity:.8; margin-top:2px; }
+  .checkin-bar { display:flex; justify-content:space-between; align-items:center; margin-top:10px; }
+  .btn-checkin { background:var(--accent); color:#fff; border:none; border-radius:20px; padding:6px 14px; font-size:13px; font-weight:700; cursor:pointer; }
+  .btn-checkin.done { background:#9E9E9E; }
+  nav { display:flex; background:#fff; border-bottom:1px solid #E0E0E0; position:sticky; top:96px; z-index:9; }
+  nav button { flex:1; padding:12px 0; border:none; background:none; font-size:14px; color:var(--muted); cursor:pointer; border-bottom:2px solid transparent; }
+  nav button.active { color:var(--primary); border-bottom-color:var(--primary); font-weight:700; }
+  main { padding:14px 14px 0; }
+  .card { background:var(--card); border-radius:12px; padding:16px; box-shadow:0 1px 4px rgba(0,0,0,.06); margin-bottom:14px; }
+  .chapter-select { width:100%; padding:10px; border:1px solid #DDD; border-radius:8px; font-size:14px; background:#fff; }
+  .mode-row { display:flex; gap:8px; margin-top:10px; }
+  .mode-row button { flex:1; padding:10px; border:1px solid #DDD; border-radius:8px; background:#fff; font-size:13px; cursor:pointer; }
+  .mode-row button.active { border-color:var(--primary); color:var(--primary); background:#EDEFFC; font-weight:700; }
+  .q-tag { font-size:12px; color:var(--muted); margin-bottom:6px; display:flex; justify-content:space-between; }
+  .q-text { font-size:16px; line-height:1.7; margin-bottom:14px; font-weight:700; }
+  .option { display:block; width:100%; text-align:left; padding:12px; margin-bottom:8px; border:1.5px solid #DDD; border-radius:8px; background:#fff; font-size:15px; line-height:1.5; cursor:pointer; }
+.option.correct { border-color:var(--ok); background:#E8F5E9; color:var(--ok); font-weight:700; }
+  .option.wrong { border-color:var(--err); background:#FFEBEE; color:var(--err); font-weight:700; }
+  .option.picked { border-color:var(--accent); background:#FFF3E0; font-weight:700; }
+  .option:disabled { cursor:default; }
+  .type-tag { display:inline-block; font-size:11px; padding:1px 8px; border-radius:10px; background:#EDEFFC; color:var(--primary); margin-right:6px; font-weight:600; }
+  .type-tag.case { background:#FBE9E7; color:#BF360C; }
+  .analysis { display:none; background:#FFF8E1; border-left:4px solid var(--accent); border-radius:0 8px 8px 0; padding:12px; margin-top:10px; font-size:14px; line-height:1.7; }
+  .analysis.show { display:block; }
+  #analysisText { white-space:pre-wrap; line-height:1.8; }
+  .analysis .src { color:var(--muted); font-size:12px; margin-top:6px; }
+  .action-row { display:flex; gap:8px; margin-top:12px; }
+  .action-row button { flex:1; padding:11px; border:none; border-radius:8px; font-size:14px; font-weight:700; cursor:pointer; }
+  .btn-primary { background:var(--primary); color:#fff; }
+  .btn-plain { background:#EEE; color:var(--text); }
+  .empty { text-align:center; color:var(--muted); padding:40px 0; font-size:14px; }
+  .stat-grid { display:grid; grid-template-columns:repeat(2,1fr); gap:10px; }
+  .stat { background:var(--card); border-radius:12px; padding:16px; text-align:center; box-shadow:0 1px 4px rgba(0,0,0,.06); }
+  .stat .num { font-size:26px; font-weight:800; color:var(--primary); }
+  .stat .label { font-size:12px; color:var(--muted); margin-top:4px; }
+  .week { display:flex; justify-content:space-between; margin-top:14px; }
+  .week .day { width:13%; text-align:center; }
+  .week .dot { width:28px; height:28px; line-height:28px; border-radius:50%; margin:4px auto; font-size:11px; background:#EEEEEE; color:var(--muted); }
+  .week .dot.on { background:var(--accent); color:#fff; font-weight:700; }
+  .week .w-name { font-size:11px; color:var(--muted); }
+  .wrong-item { display:flex; justify-content:space-between; align-items:center; padding:12px 0; border-bottom:1px solid #F0F0F0; font-size:14px; }
+  .wrong-item button { border:none; background:var(--primary); color:#fff; border-radius:6px; padding:6px 12px; font-size:12px; cursor:pointer; }
+  .import-bar { margin-top:10px; display:flex; gap:8px; align-items:center; }
+  .import-bar label { flex:1; padding:9px; border:1.5px dashed #BBB; border-radius:8px; text-align:center; font-size:13px; color:var(--muted); cursor:pointer; }
+  .toast { position:fixed; left:50%; bottom:90px; transform:translateX(-50%); background:rgba(0,0,0,.8); color:#fff; padding:9px 18px; border-radius:20px; font-size:13px; z-index:99; opacity:0; transition:opacity .3s; pointer-events:none; }
+</style>
+</head>
+<body>
+<header>
+  <h1>一建刷题题库</h1>
+  <div class="sub" id="bankInfo">建设中…</div>
+  <div class="checkin-bar">
+    <span id="streakText" style="font-size:12px;opacity:.9;">连续打卡 0 天</span>
+    <button class="btn-checkin" id="btnCheckin" onclick="doCheckin()">今日打卡</button>
+  </div>
+</header>
+<nav>
+  <button id="tabQuiz" class="active" onclick="switchTab('quiz')">刷题</button>
+  <button id="tabWrong" onclick="switchTab('wrong')">错题本</button>
+  <button id="tabStats" onclick="switchTab('stats')">统计</button>
+</nav>
+<main>
+  <section id="viewQuiz">
+<div class="card">
+      <select id="subjectSel" class="chapter-select" onchange="onFilterChange('subject')"></select>
+      <div style="display:flex;gap:8px;margin-top:8px;">
+        <select id="yearSel" class="chapter-select" onchange="onFilterChange('year')" style="flex:1;"></select>
+        <select id="typeSel" class="chapter-select" onchange="onFilterChange('type')" style="flex:1;"></select>
+      </div>
+      <div class="mode-row">
+        <button id="modeSeq" class="active" onclick="setMode('seq')">顺序练习</button>
+        <button id="modeRnd" onclick="setMode('rnd')">随机抽题</button>
+      </div>
+    </div>
+    <div class="card">
+      <div class="q-tag"><span id="qChapter"></span><span id="qIndex"></span></div>
+      <div class="q-text" id="qText"></div>
+      <div id="qOptions"></div>
+      <div class="analysis" id="qAnalysis">
+        <div id="analysisText"></div>
+        <div class="src" id="analysisSrc"></div>
+      </div>
+      <div class="action-row" id="actionRow">
+        <button class="btn-plain" onclick="prevQuestion()">上一题</button>
+        <button class="btn-primary" id="btnSubmitMulti" onclick="submitMulti()" style="display:none;">提交答案</button>
+        <button class="btn-primary" id="btnShowAns" onclick="showCaseAnswer()" style="display:none;">查看答案</button>
+        <button class="btn-primary" id="btnNext" onclick="nextQuestion()">下一题</button>
+      </div>
+    </div>
+  </section>
+  <section id="viewWrong" style="display:none;">
+    <div class="card" id="wrongList"></div>
+  </section>
+  <section id="viewStats" style="display:none;">
+    <div class="stat-grid">
+      <div class="stat"><div class="num" id="stTotal">0</div><div class="label">题库总题数</div></div>
+      <div class="stat"><div class="num" id="stAnswered">0</div><div class="label">已作答</div></div>
+      <div class="stat"><div class="num" id="stRate">0%</div><div class="label">正确率</div></div>
+      <div class="stat"><div class="num" id="stWrong">0</div><div class="label">错题数</div></div>
+    </div>
+    <div class="card">
+      <div style="font-size:14px;font-weight:700;margin-bottom:6px;">近 7 天打卡</div>
+      <div class="week" id="weekStrip"></div>
+    </div>
+    <div class="card">
+      <div style="font-size:14px;font-weight:700;margin-bottom:6px;">题库维护</div>
+      <div class="import-bar">
+        <label for="fileBank">导入题库 JSON（data/bank/bank.json）</label>
+        <input type="file" id="fileBank" accept=".json,application/json" style="display:none;" onchange="importBank(event)">
+      </div>
+    </div>
+  </section>
+</main>
+<div class="toast" id="toast"></div>
+<script>
+/* ========== AI 题库 H5 原型：默认题库（由流水线注入，替换占位符生成） ========== */
+const DEFAULT_BANK = (
+  typeof ZHENTI_BANK !== 'undefined' && Array.isArray(ZHENTI_BANK) && ZHENTI_BANK.length
+) ? ZHENTI_BANK : [
+  {
+    "id": "demo-001",
+    "subject": "建设工程法规及相关知识",
+    "chapter": "建设工程基本法律制度",
+    "question": "在我国法律体系中，行政法规的制定主体是（　　）。",
+    "options": [
+      "A. 全国人民代表大会",
+      "B. 全国人民代表大会常务委员会",
+      "C. 国务院",
+      "D. 国务院各部委"
+    ],
+    "answer": "C",
+    "analysis": "行政法规由国务院根据宪法和法律制定，效力低于宪法和法律，高于地方性法规。地方性法规由省级人大及其常委会制定，部门规章由国务院各部委制定。",
+    "source": "《中华人民共和国宪法》第89条",
+    "difficulty": "易",
+    "type": "单选",
+    "verify": false
+  },
+  {
+    "id": "demo-002",
+    "subject": "建设工程法规及相关知识",
+    "chapter": "建设工程基本法律制度",
+    "question": "在我国的法律形式体系中，具有最高法律效力的是（　　）。",
+    "options": [
+      "A. 宪法",
+      "B. 法律",
+      "C. 行政法规",
+      "D. 地方性法规"
+    ],
+    "answer": "A",
+    "analysis": "宪法是国家的根本法，具有最高法律效力，一切法律、行政法规和地方性法规都不得同宪法相抵触。",
+    "source": "《中华人民共和国宪法》序言及第5条",
+    "difficulty": "易",
+    "type": "单选",
+    "verify": false
+  },
+  {
+    "id": "demo-003",
+    "subject": "建设工程法规及相关知识",
+    "chapter": "建设工程基本法律制度",
+    "question": "下列各项中，不属于法人应当具备条件的是（　　）。",
+    "options": [
+      "A. 依法成立",
+      "B. 有自己的名称、组织机构和住所",
+      "C. 有必要的财产或者经费",
+      "D. 有自己的注册商标"
+    ],
+    "answer": "D",
+    "analysis": "法人应当具备的条件包括：依法成立；有自己的名称、组织机构和住所；有必要的财产或者经费；能够独立承担民事责任。注册商标不是法人成立的条件，法人可以没有注册商标。",
+    "source": "《中华人民共和国民法典》第58条",
+    "difficulty": "易",
+    "type": "单选",
+    "verify": false
+  },
+  {
+    "id": "demo-004",
+    "subject": "建设工程法规及相关知识",
+    "chapter": "建设工程基本法律制度",
+    "question": "关于施工企业项目经理部的说法，正确的是（　　）。",
+    "options": [
+      "A. 项目经理部具有法人资格",
+      "B. 项目经理部是施工企业的常设职能机构",
+      "C. 项目经理部是施工企业为完成具体工程项目而设立的一次性管理组织",
+      "D. 项目经理部的法律后果由项目经理个人承担"
+    ],
+    "answer": "C",
+    "analysis": "项目经理部是施工企业为完成某个项目而设立的一次性管理组织，不具备法人资格，其行为的法律后果由企业法人承担。项目经理是受企业法定代表人的委托对项目施工过程全面负责的项目管理者。",
+    "source": "一级建造师考试教材《建设工程法规及相关知识》法人制度章节",
+    "difficulty": "中",
+    "type": "单选",
+    "verify": false
+  },
+  {
+    "id": "demo-005",
+    "subject": "建设工程法规及相关知识",
+    "chapter": "建设工程基本法律制度",
+    "question": "根据《民法典》规定，向人民法院请求保护民事权利的普通诉讼时效期间为（　　）。",
+    "options": [
+      "A. 1年",
+      "B. 2年",
+      "C. 3年",
+      "D. 4年"
+    ],
+    "answer": "C",
+    "analysis": "普通诉讼时效期间为3年，自权利人知道或者应当知道权利受到损害以及义务人之日起计算；该期间可依法中止、中断，但适用最长权利保护期限20年的规定。",
+    "source": "《中华人民共和国民法典》第188条",
+    "difficulty": "易",
+    "type": "单选",
+    "verify": false
+  },
+  {
+    "id": "demo-006",
+    "subject": "建设工程法规及相关知识",
+    "chapter": "建设工程基本法律制度",
+    "question": "下列民事法律行为中，属于委托代理的是（　　）。",
+    "options": [
+      "A. 父母作为法定代理人代未成年子女订立合同",
+      "B. 甲公司委托乙公司代为采购建筑材料",
+      "C. 法院为无诉讼行为能力人指定代理人",
+      "D. 公司法定代表人代表公司签署合同"
+    ],
+    "answer": "B",
+    "analysis": "委托代理是基于被代理人的委托授权而产生的代理。B项甲公司委托乙公司采购材料属于委托代理；A项为法定代理；C项为指定代理；D项中法定代表人依法代表法人从事民事活动，属于代表行为而非代理行为。",
+    "source": "《中华人民共和国民法典》第161～165条",
+    "difficulty": "中",
+    "type": "单选",
+    "verify": false
+  },
+  {
+    "id": "demo-007",
+    "subject": "建设工程法规及相关知识",
+    "chapter": "建设工程物权与担保制度",
+    "question": "根据物权法律制度，不动产物权的设立、变更、转让和消灭，应当依照法律规定办理（　　）。",
+    "options": [
+      "A. 交付",
+      "B. 登记",
+      "C. 公证",
+      "D. 批准"
+    ],
+    "answer": "B",
+    "analysis": "不动产物权的设立、变更、转让和消灭，经依法登记发生效力；未经登记，不发生效力，但法律另有规定的除外。动产物权的设立和转让以交付为生效要件。",
+    "source": "《中华人民共和国民法典》第209条",
+    "difficulty": "易",
+    "type": "单选",
+    "verify": false
+  },
+  {
+    "id": "demo-008",
+    "subject": "建设工程法规及相关知识",
+    "chapter": "建设工程物权与担保制度",
+    "question": "根据《民法典》，关于建设用地使用权的说法，正确的是（　　）。",
+    "options": [
+      "A. 建设用地使用权只能设立于土地的地表",
+      "B. 建设用地使用权可以在土地的地表、地上或者地下分别设立",
+      "C. 建设用地使用权设立后不得转让、互换、出资",
+      "D. 建设用地使用权期限届满后自动消灭，不能续期"
+    ],
+    "answer": "B",
+    "analysis": "建设用地使用权人依法对国家所有的土地享有占有、使用和收益的权利，可以在土地的地表、地上或者地下分别设立。建设用地使用权可以依法转让、互换、出资、赠与或者抵押；住宅建设用地使用权期限届满的自动续期。",
+    "source": "《中华人民共和国民法典》第344条、第347条、第359条",
+    "difficulty": "中",
+    "type": "单选",
+    "verify": false
+  },
+  {
+    "id": "demo-009",
+    "subject": "建设工程法规及相关知识",
+    "chapter": "建设工程物权与担保制度",
+    "question": "以正在建造的建筑物抵押的，抵押权自（　　）设立。",
+    "options": [
+      "A. 抵押合同成立时",
+      "B. 抵押合同备案时",
+      "C. 办理抵押登记时",
+      "D. 公证机关公证时"
+    ],
+    "answer": "C",
+    "analysis": "以建筑物和其他土地附着物、建设用地使用权、海域使用权或者正在建造的建筑物等不动产抵押的，应当办理抵押登记，抵押权自登记时设立。以动产抵押的，抵押权自抵押合同生效时设立，未经登记不得对抗善意第三人。",
+    "source": "《中华人民共和国民法典》第402条、第403条",
+    "difficulty": "中",
+    "type": "单选",
+    "verify": false
+  },
+  {
+    "id": "demo-010",
+    "subject": "建设工程法规及相关知识",
+    "chapter": "建设工程物权与担保制度",
+    "question": "当事人约定的定金数额超过主合同标的额20%的部分（　　）。",
+    "options": [
+      "A. 有效",
+      "B. 无效",
+      "C. 不产生定金的效力",
+      "D. 由法院决定是否有效"
+    ],
+    "answer": "C",
+    "analysis": "定金的数额由当事人约定，但不得超过主合同标的额的20%，超过部分不产生定金的效力。定金合同自实际交付定金时成立，实际交付的定金数额多于或者少于约定数额的，视为变更约定的定金数额。",
+    "source": "《中华人民共和国民法典》第586条",
+    "difficulty": "中",
+    "type": "单选",
+    "verify": false
+  },
+  {
+    "id": "demo-011",
+    "subject": "建设工程法规及相关知识",
+    "chapter": "建设工程物权与担保制度",
+    "question": "下列担保方式中，属于法定担保物权的是（　　）。",
+    "options": [
+      "A. 保证",
+      "B. 抵押",
+      "C. 留置",
+      "D. 定金"
+    ],
+    "answer": "C",
+    "analysis": "留置权是债权人按照合同约定占有债务人的动产，债务人不履行到期债务时，债权人有权留置该动产并就该动产优先受偿的权利。留置权依法律规定直接产生，无需当事人约定，故为法定担保物权；抵押、质押、保证、定金均依当事人约定设立。",
+    "source": "《中华人民共和国民法典》第447条",
+    "difficulty": "难",
+    "type": "单选",
+    "verify": false
+  },
+  {
+    "id": "demo-012",
+    "subject": "建设工程法规及相关知识",
+    "chapter": "建设工程知识产权制度",
+    "question": "根据《著作权法》，下列作者权利中，保护期不受限制的是（　　）。",
+    "options": [
+      "A. 复制权",
+      "B. 发行权",
+      "C. 署名权",
+      "D. 改编权"
+    ],
+    "answer": "C",
+    "analysis": "作者的署名权、修改权、保护作品完整权的保护期不受限制。复制权、发行权、改编权等财产权利的保护期为作者终生及其死亡后50年。",
+    "source": "《中华人民共和国著作权法》第22条、第23条",
+    "difficulty": "中",
+    "type": "单选",
+    "verify": false
+  },
+  {
+    "id": "demo-013",
+    "subject": "建设工程法规及相关知识",
+    "chapter": "施工许可法律制度",
+    "question": "根据《建筑法》，建设单位应当自领取施工许可证之日起（　　）内开工。",
+    "options": [
+      "A. 1个月",
+      "B. 2个月",
+      "C. 3个月",
+      "D. 6个月"
+    ],
+    "answer": "C",
+    "analysis": "建设单位应当自领取施工许可证之日起3个月内开工。因故不能按期开工的，应当向发证机关申请延期；延期以两次为限，每次不超过3个月。既不开工又不申请延期或者超过延期时限的，施工许可证自行废止。",
+    "source": "《中华人民共和国建筑法》第9条",
+    "difficulty": "易",
+    "type": "单选",
+    "verify": false
+  },
+  {
+    "id": "demo-014",
+    "subject": "建设工程法规及相关知识",
+    "chapter": "施工许可法律制度",
+    "question": "根据《建筑法》，已领取施工许可证的工程因故不能按期开工申请延期的，延期以（　　）次为限，每次不超过3个月。",
+    "options": [
+      "A. 1次",
+      "B. 2次",
+      "C. 3次",
+      "D. 5次"
+    ],
+    "answer": "B",
+    "analysis": "因故不能按期开工的，应当向发证机关申请延期；延期以两次为限，每次不超过3个月。既不开工又不申请延期或者超过延期时限的，施工许可证自行废止。",
+    "source": "《中华人民共和国建筑法》第9条",
+    "difficulty": "易",
+    "type": "单选",
+    "verify": false
+  },
+  {
+    "id": "demo-015",
+    "subject": "建设工程法规及相关知识",
+    "chapter": "施工许可法律制度",
+    "question": "根据《建筑法》，在建的建筑工程因故中止施工的，建设单位应当自中止施工之日起（　　）内向发证机关报告。",
+    "options": [
+      "A. 15日",
+      "B. 1个月",
+      "C. 2个月",
+      "D. 3个月"
+    ],
+    "answer": "B",
+    "analysis": "在建工程因故中止施工的，建设单位应当自中止施工之日起1个月内向发证机关报告，并按照规定做好建筑工程的维护管理工作。中止施工满1年的工程恢复施工前，建设单位应当报发证机关核验施工许可证。",
+    "source": "《中华人民共和国建筑法》第10条",
+    "difficulty": "中",
+    "type": "单选",
+    "verify": false
+  },
+  {
+    "id": "demo-016",
+    "subject": "建设工程法规及相关知识",
+    "chapter": "施工许可法律制度",
+    "question": "根据《建筑法》，中止施工满（　　）的工程恢复施工前，建设单位应当报发证机关核验施工许可证。",
+    "options": [
+      "A. 3个月",
+      "B. 6个月",
+      "C. 1年",
+      "D. 2年"
+    ],
+    "answer": "C",
+    "analysis": "中止施工满1年的工程恢复施工前，建设单位应当报发证机关核验施工许可证，经核验符合条件的，允许继续施工，施工许可证继续有效；不符合条件的，应当收回施工许可证，待条件具备后重新申请。",
+    "source": "《中华人民共和国建筑法》第10条",
+    "difficulty": "易",
+    "type": "单选",
+    "verify": false
+  },
+  {
+    "id": "demo-017",
+    "subject": "建设工程法规及相关知识",
+    "chapter": "施工许可法律制度",
+    "question": "根据《建筑法》，未取得施工许可证或者开工报告未经批准擅自施工的，正确的处理是（　　）。",
+    "options": [
+      "A. 一律吊销营业执照",
+      "B. 只处行政罚款，不必停止施工",
+      "C. 责令停止施工并吊销施工许可证",
+      "D. 责令改正；对不符合开工条件的责令停止施工，可以处以罚款"
+    ],
+    "answer": "D",
+    "analysis": "违反规定未取得施工许可证或者开工报告未经批准擅自施工的，责令改正；对不符合开工条件的责令停止施工，可以处以罚款。应注意题中施工许可证本身尚未取得，不存在“吊销”之说，故A、C表述错误。",
+    "source": "《中华人民共和国建筑法》第64条",
+    "difficulty": "中",
+    "type": "单选",
+    "verify": false
+  },
+  {
+    "id": "demo-018",
+    "subject": "建设工程法规及相关知识",
+    "chapter": "建设工程发承包法律制度",
+    "question": "依法必须进行招标的项目，其评标委员会由招标人的代表和有关技术、经济等方面的专家组成，成员人数为5人以上单数，其中技术、经济等方面的专家不得少于成员总数的（　　）。",
+    "options": [
+      "A. 1/2",
+      "B. 2/3",
+      "C. 3/4",
+      "D. 1/3"
+    ],
+    "answer": "B",
+    "analysis": "依法必须进行招标的项目，评标委员会由招标人的代表和有关技术、经济等方面的专家组成，成员人数为5人以上单数，其中技术、经济等方面的专家不得少于成员总数的2/3。与投标人有利害关系的人不得进入相关项目的评标委员会。",
+    "source": "《中华人民共和国招标投标法》第37条",
+    "difficulty": "中",
+    "type": "单选",
+    "verify": false
+  },
+  {
+    "id": "demo-019",
+    "subject": "建设工程法规及相关知识",
+    "chapter": "建设工程发承包法律制度",
+    "question": "根据《招标投标法实施条例》，投标保证金不得超过招标项目估算价的（　　）。",
+    "options": [
+      "A. 1%",
+      "B. 2%",
+      "C. 5%",
+      "D. 10%"
+    ],
+    "answer": "B",
+    "analysis": "招标人在招标文件中要求投标人提交投标保证金的，投标保证金不得超过招标项目估算价的2%。投标保证金有效期应当与投标有效期一致。依法必须进行招标的项目的境内投标单位，以现金或者支票形式提交的投标保证金应当从其基本账户转出。",
+    "source": "《中华人民共和国招标投标法实施条例》第26条",
+    "difficulty": "易",
+    "type": "单选",
+    "verify": false
+  },
+  {
+    "id": "demo-020",
+    "subject": "建设工程法规及相关知识",
+    "chapter": "建设工程发承包法律制度",
+    "question": "关于联合体投标的说法，正确的是（　　）。",
+    "options": [
+      "A. 联合体各方可以单独以自己的名义再参加同一招标项目的投标",
+      "B. 联合体中标的，联合体各方分别与招标人签订合同",
+      "C. 联合体中标的，联合体各方就中标项目向招标人承担连带责任",
+      "D. 联合体各方可以约定由一方对外承担全部责任"
+    ],
+    "answer": "C",
+    "analysis": "两个以上法人或者其他组织可以组成一个联合体，以一个投标人的身份共同投标。联合体各方应当签订共同投标协议，明确约定各方拟承担的工作和责任，并将共同投标协议连同投标文件一并提交招标人。联合体中标的，联合体各方应当共同与招标人签订合同，就中标项目向招标人承担连带责任。",
+    "source": "《中华人民共和国招标投标法》第31条",
+    "difficulty": "中",
+    "type": "单选",
+    "verify": false
+  },
+  {
+    "id": "demo-021",
+    "subject": "建设工程法规及相关知识",
+    "chapter": "建设工程发承包法律制度",
+    "question": "根据《建筑法》，关于工程分包的说法，正确的是（　　）。",
+    "options": [
+      "A. 分包单位可以将其承包的工程再分包",
+      "B. 建筑主体结构的施工必须由总承包单位自行完成",
+      "C. 分包工程可以不经过建设单位认可",
+      "D. 分包单位可以将劳务作业再分包给个人"
+    ],
+    "answer": "B",
+    "analysis": "建筑工程总承包单位可以将承包工程中的部分工程发包给具有相应资质条件的分包单位；但是，除总承包合同中约定的分包外，必须经建设单位认可。施工总承包的，建筑工程主体结构的施工必须由总承包单位自行完成。禁止分包单位将其承包的工程再分包。",
+    "source": "《中华人民共和国建筑法》第29条",
+    "difficulty": "中",
+    "type": "单选",
+    "verify": false
+  },
+  {
+    "id": "demo-022",
+    "subject": "建设工程法规及相关知识",
+    "chapter": "建设工程合同和劳动合同法律制度",
+    "question": "根据《民法典》，承诺生效时间的确定原则是（　　）。",
+    "options": [
+      "A. 承诺作出时生效",
+      "B. 承诺发出时生效",
+      "C. 承诺通知到达要约人时生效",
+      "D. 承诺经公证时生效"
+    ],
+    "answer": "C",
+    "analysis": "承诺自承诺通知到达要约人时生效。承诺不需要通知的，根据交易习惯或者要约的要求作出承诺的行为时生效。承诺生效时合同成立。",
+    "source": "《中华人民共和国民法典》第481条、第483条",
+    "difficulty": "易",
+    "type": "单选",
+    "verify": false
+  },
+  {
+    "id": "demo-023",
+    "subject": "建设工程法规及相关知识",
+    "chapter": "建设工程合同和劳动合同法律制度",
+    "question": "下列合同情形中，属于效力待定合同的是（　　）。",
+    "options": [
+      "A. 限制民事行为能力人订立的不与其年龄、智力、精神健康状况相适应的合同，未经法定代理人追认",
+      "B. 一方以欺诈手段使对方在违背真实意思的情况下订立的合同",
+      "C. 违反法律、行政法规的强制性规定的合同",
+      "D. 以虚假的意思表示订立的合同"
+    ],
+    "answer": "A",
+    "analysis": "限制民事行为能力人实施的与其年龄、智力、精神健康状况不相适应的民事法律行为，经法定代理人追认后有效；法定代理人未作表示的，视为拒绝追认。该合同在被追认前属于效力待定。B项属于可撤销合同；C项属于无效合同；D项属于无效合同。",
+    "source": "《中华人民共和国民法典》第145条、第146条、第148条、第153条",
+    "difficulty": "难",
+    "type": "单选",
+    "verify": false
+  },
+  {
+    "id": "demo-024",
+    "subject": "建设工程法规及相关知识",
+    "chapter": "建设工程合同和劳动合同法律制度",
+    "question": "根据《民法典》，因不可抗力不能履行合同的，当事人应当采取的措施是（　　）。",
+    "options": [
+      "A. 及时通知对方，以减轻可能给对方造成的损失",
+      "B. 等待不可抗力结束后继续履行",
+      "C. 自行决定解除合同并要求对方承担违约责任",
+      "D. 仅在下一次履约日前通知对方"
+    ],
+    "answer": "A",
+    "analysis": "因不可抗力不能履行合同的，应当及时通知对方，以减轻可能给对方造成的损失，并应当在合理期限内提供证明。因不可抗力不能履行合同的，根据不可抗力的影响，部分或者全部免除责任，但法律另有规定的除外。",
+    "source": "《中华人民共和国民法典》第590条",
+    "difficulty": "易",
+    "type": "单选",
+    "verify": false
+  },
+  {
+    "id": "demo-025",
+    "subject": "建设工程法规及相关知识",
+    "chapter": "建设工程合同和劳动合同法律制度",
+    "question": "根据《劳动合同法》，已建立劳动关系的，除要求订立书面劳动合同的情形外，用人单位应当自用工之日起（　　）内与劳动者订立书面劳动合同。",
+    "options": [
+      "A. 15日",
+      "B. 1个月",
+      "C. 2个月",
+      "D. 3个月"
+    ],
+    "answer": "B",
+    "analysis": "建立劳动关系，应当订立书面劳动合同。已建立劳动关系，未同时订立书面劳动合同的，应当自用工之日起1个月内订立书面劳动合同。超过1个月不满1年未订立书面劳动合同的，应当依法向劳动者每月支付二倍的工资。",
+    "source": "《中华人民共和国劳动合同法》第10条、第82条",
+    "difficulty": "易",
+    "type": "单选",
+    "verify": false
+  },
+  {
+    "id": "demo-026",
+    "subject": "建设工程法规及相关知识",
+    "chapter": "建设工程合同和劳动合同法律制度",
+    "question": "根据《社会保险法》，下列社会保险项目中，由用人单位缴纳、职工本人不缴纳的是（　　）。",
+    "options": [
+      "A. 基本养老保险",
+      "B. 基本医疗保险",
+      "C. 工伤保险",
+      "D. 失业保险"
+    ],
+    "answer": "C",
+    "analysis": "职工应当参加工伤保险，由用人单位缴纳工伤保险费，职工不缴纳工伤保险费。养老保险、医疗保险、失业保险由用人单位和职工共同缴纳；生育保险与医疗保险合并实施后，同样由用人单位缴纳。",
+    "source": "《中华人民共和国社会保险法》第33条",
+    "difficulty": "易",
+    "type": "单选",
+    "verify": false
+  },
+  {
+    "id": "demo-027",
+    "subject": "建设工程法规及相关知识",
+    "chapter": "建设工程安全生产法律制度",
+    "question": "根据《安全生产法》，生产经营单位新建、改建、扩建工程项目的安全设施，必须与主体工程同时设计、同时施工、同时投产使用。“三同时”不包括（　　）。",
+    "options": [
+      "A. 同时设计",
+      "B. 同时施工",
+      "C. 同时投入生产和使用",
+      "D. 同时竣工验收"
+    ],
+    "answer": "D",
+    "analysis": "安全设施投资应当纳入建设项目概算，安全设施必须与主体工程同时设计、同时施工、同时投入生产和使用（即“三同时”）。同时竣工验收不属于“三同时”的法定表述。",
+    "source": "《中华人民共和国安全生产法》第31条",
+    "difficulty": "中",
+    "type": "单选",
+    "verify": false
+  },
+  {
+    "id": "demo-028",
+    "subject": "建设工程法规及相关知识",
+    "chapter": "建设工程安全生产法律制度",
+    "question": "根据《安全生产许可证条例》，安全生产许可证的有效期为（　　）。",
+    "options": [
+      "A. 1年",
+      "B. 2年",
+      "C. 3年",
+      "D. 5年"
+    ],
+    "answer": "C",
+    "analysis": "安全生产许可证的有效期为3年。安全生产许可证有效期满需要延期的，企业应当于有效期届满前3个月向原发证机关办理延期手续。",
+    "source": "《安全生产许可证条例》第9条",
+    "difficulty": "易",
+    "type": "单选",
+    "verify": false
+  },
+  {
+    "id": "demo-029",
+    "subject": "建设工程法规及相关知识",
+    "chapter": "建设工程安全生产法律制度",
+    "question": "根据《建设工程安全生产管理条例》，对建设工程项目的安全施工全面负责的是（　　）。",
+    "options": [
+      "A. 施工单位的项目负责人",
+      "B. 施工单位的专职安全生产管理人员",
+      "C. 建设单位项目负责人",
+      "D. 总监理工程师"
+    ],
+    "answer": "A",
+    "analysis": "施工单位的项目负责人应当由取得相应执业资格的人员担任，对建设工程项目的安全施工负责，落实安全生产责任制度、安全生产规章制度和操作规程，确保安全生产费用的有效使用。",
+    "source": "《建设工程安全生产管理条例》第21条",
+    "difficulty": "易",
+    "type": "单选",
+    "verify": false
+  },
+  {
+    "id": "demo-030",
+    "subject": "建设工程法规及相关知识",
+    "chapter": "建设工程质量法律制度",
+    "question": "根据《建设工程质量管理条例》，建设工程的最低保修期限自（　　）起计算。",
+    "options": [
+      "A. 工程交付使用之日",
+      "B. 工程竣工之日",
+      "C. 竣工验收合格之日",
+      "D. 施工合同签订之日"
+    ],
+    "answer": "C",
+    "analysis": "建设工程实行质量保修制度。建设工程在保修范围和保修期限内发生质量问题的，施工单位应当履行保修义务，并对造成的损失承担赔偿责任。保修期限自竣工验收合格之日起计算。",
+    "source": "《建设工程质量管理条例》第40条",
+    "difficulty": "易",
+    "type": "单选",
+    "verify": false
+  }
+];
+
+/* ========== 状态与持久化（localStorage） ========== *//* ========== 状态与持久化（localStorage） ========== */
+const LS = {
+  userBank: 'yj08_userBank',
+  record: 'yj08_record',
+  wrong: 'yj08_wrong',
+  checkins: 'yj08_checkins'
+};
+function lsGet(k, def) { try { const v = localStorage.getItem(k); return v ? JSON.parse(v) : def; } catch (e) { return def; } }
+function lsSet(k, v) { try { localStorage.setItem(k, JSON.stringify(v)); } catch (e) { /* ignore */ } }
+
+let bank = [];
+let quiz = [];          // 当前练习队列（题目数组）
+let qpos = 0;           // 当前题目下标
+let mode = 'seq';       // seq | rnd
+let filter = { subject: '全部', year: 'all', type: '全部' };
+let multiPicked = [];   // 多选题已选项
+
+function getBank() {
+  const ub = lsGet(LS.userBank, null);
+  return (ub && Array.isArray(ub) && ub.length > 0) ? ub : DEFAULT_BANK;
+}
+function refreshBankInfo() {
+  const subs = new Set(bank.map(q => q.subject || '未分类')).size;
+  const years = new Set(bank.map(q => q.year || '未知')).size;
+  let txt = '题库 ' + bank.length + ' 题 · ' + subs + ' 个科目';
+  if (bank.length && bank.some(q => q.year !== undefined)) txt += ' · ' + years + ' 个年份';
+  document.getElementById('bankInfo').textContent = txt;
+}
+function subjects() {
+  const arr = [];
+  bank.forEach(q => { const s = q.subject || '未分类'; if (!arr.includes(s)) arr.push(s); });
+  return ['全部'].concat(arr);
+}
+function yearOptions() {
+  // 返回 [{value,label}]：value 为 all 或 "year|exam"
+  const seen = [];
+  const out = [{ value: 'all', label: '全部年份' }];
+  const subj = filter.subject;
+  bank.forEach(q => {
+    if (subj !== '全部' && q.subject !== subj) return;
+    if (q.year === undefined || q.year === null || q.year === '') return;
+    const key = q.year + '|' + (q.exam || '');
+    if (seen.includes(key)) return;
+    seen.push(key);
+    out.push({ value: key, label: (q.exam ? q.year + ' ' + q.exam : q.year + '年') });
+  });
+  return out;
+}
+function typeOptions() {
+  const arr = [];
+  bank.forEach(q => { const t = q.type || '单选'; if (!arr.includes(t)) arr.push(t); });
+  return ['全部'].concat(arr);
+}
+function buildFilters() {
+  const subjSel = document.getElementById('subjectSel');
+  subjSel.innerHTML = '';
+  subjects().forEach(s => {
+    const op = document.createElement('option');
+    op.value = s; op.textContent = s;
+    subjSel.appendChild(op);
+  });
+  subjSel.value = filter.subject || '全部';
+  buildYearSel();
+  const typeSel = document.getElementById('typeSel');
+  typeSel.innerHTML = '';
+  typeOptions().forEach(t => {
+    const op = document.createElement('option');
+    op.value = t; op.textContent = t;
+    typeSel.appendChild(op);
+  });
+  typeSel.value = filter.type || '全部';
+}
+function buildYearSel() {
+  const yearSel = document.getElementById('yearSel');
+  yearSel.innerHTML = '';
+  const opts = yearOptions();
+  opts.forEach(yo => {
+    const op = document.createElement('option');
+    op.value = yo.value; op.textContent = yo.label;
+    yearSel.appendChild(op);
+  });
+  yearSel.value = opts.some(yo => yo.value === filter.year) ? filter.year : 'all';
+}
+function onFilterChange(which) {
+  if (which === 'subject') { filter.subject = document.getElementById('subjectSel').value; filter.year = 'all'; buildYearSel(); }
+  else if (which === 'year') { filter.year = document.getElementById('yearSel').value; }
+  else if (which === 'type') { filter.type = document.getElementById('typeSel').value; }
+  startQuiz();
+}
+function startQuiz() {
+  const pool = bank.filter(q => {
+    if (filter.subject !== '全部' && q.subject !== filter.subject) return false;
+    if (filter.year !== 'all') {
+      const parts = String(filter.year).split('|');
+      if (String(q.year) !== parts[0]) return false;
+      if ((q.exam || '') !== (parts[1] || '')) return false;
+    }
+    if (filter.type !== '全部' && (q.type || '单选') !== filter.type) return false;
+    return true;
+  });
+  if (pool.length === 0) {
+    document.getElementById('qText').textContent = '当前筛选下暂无题目，请调整筛选条件';
+    document.getElementById('qIndex').textContent = '0 / 0';
+    document.getElementById('qOptions').innerHTML = '';
+    document.getElementById('qAnalysis').classList.remove('show');
+    document.getElementById('btnSubmitMulti').style.display = 'none';
+    document.getElementById('btnShowAns').style.display = 'none';
+    document.getElementById('btnNext').textContent = '下一题';
+    return;
+  }
+  quiz = mode === 'rnd' ? shuffle(pool) : pool;
+  qpos = 0;
+  renderQuestion();
+}
+function setMode(m) {
+  mode = m;
+  document.getElementById('modeSeq').classList.toggle('active', m === 'seq');
+  document.getElementById('modeRnd').classList.toggle('active', m === 'rnd');
+  startQuiz();
+}
+function shuffle(arr) { const a = arr.slice(); for (let i = a.length - 1; i > 0; i--) { const j = Math.floor(Math.random() * (i + 1)); [a[i], a[j]] = [a[j], a[i]]; } return a; }
+
+function letter(i) { return String.fromCharCode(65 + i); }
+function answered(rec, id) { return rec && rec[id]; }
+function qType(q) { return q.type || (Array.isArray(q.options) && q.options.length ? '单选' : '案例'); }
+function qMeta(q) {
+  const parts = [];
+  if (q.subject) parts.push(q.subject);
+  if (q.year !== undefined && q.year !== '') parts.push(String(q.year) + (q.exam ? ' ' + q.exam : ''));
+  return parts.join(' · ');
+}
+function renderTypeTag(q) {
+  const t = qType(q);
+  const isCase = t === '案例' || !Array.isArray(q.options) || q.options.length === 0;
+  return '<span class="type-tag' + (isCase ? ' case' : '') + '">' + t + '</span>';
+}
+function renderQuestion() {
+  if (!quiz.length) return;
+  const oldtt = document.getElementById('multiResult');
+  if (oldtt) oldtt.remove();
+  const q = quiz[qpos];
+  const t = qType(q);
+  const isCase = t === '案例' || !Array.isArray(q.options) || q.options.length === 0;
+  document.getElementById('qChapter').innerHTML = renderTypeTag(q) + '<span>' + qMeta(q) + '</span>';
+  document.getElementById('qIndex').textContent = (qpos + 1) + ' / ' + quiz.length;
+  document.getElementById('qText').textContent = q.question;
+  const box = document.getElementById('qOptions');
+  box.innerHTML = '';
+  const an = document.getElementById('qAnalysis');
+  an.classList.remove('show');
+  document.getElementById('btnSubmitMulti').style.display = 'none';
+  document.getElementById('btnShowAns').style.display = 'none';
+  const rec = lsGet(LS.record, {});
+  const isAnswered = answered(rec, q.id);
+
+  if (isCase) {
+    document.getElementById('btnShowAns').style.display = '';
+    document.getElementById('btnNext').textContent = '下一题';
+    return;
+  }
+  if (t === '多选') {
+    multiPicked = isAnswered ? (rec[q.id].picked || []).slice() : [];
+    (q.options || []).forEach((opt, i) => {
+      const btn = document.createElement('button');
+      btn.className = 'option' + (multiPicked.includes(letter(i)) ? ' picked' : '');
+      const hasPrefix = /^\s*[A-Ea-e][.、．]/.test(opt);
+      btn.textContent = hasPrefix ? opt : letter(i) + '. ' + opt;
+      btn.onclick = () => {
+        if (isAnswered) return;
+        const L = letter(i);
+        const idx = multiPicked.indexOf(L);
+        if (idx >= 0) multiPicked.splice(idx, 1); else multiPicked.push(L);
+        btn.classList.toggle('picked', multiPicked.includes(L));
+      };
+      if (isAnswered) {
+        btn.disabled = true;
+        if (q.answer.includes(letter(i))) btn.classList.add('correct');
+        else if (multiPicked.includes(letter(i))) btn.classList.add('wrong');
+      }
+      box.appendChild(btn);
+    });
+    if (!isAnswered) document.getElementById('btnSubmitMulti').style.display = '';
+    document.getElementById('btnNext').textContent = '下一题';
+    return;
+  }
+  // 单选
+  (q.options || []).forEach((opt, i) => {
+    const btn = document.createElement('button');
+    btn.className = 'option';
+    const hasPrefix = /^\s*[A-Ea-e][.、．]/.test(opt);
+    btn.textContent = hasPrefix ? opt : letter(i) + '. ' + opt;
+    btn.onclick = () => choose(q, letter(i), btn, box);
+    if (isAnswered) {
+      btn.disabled = true;
+      if (letter(i) === q.answer) btn.classList.add('correct');
+    }
+    box.appendChild(btn);
+  });
+  if (isAnswered) {
+    document.getElementById('analysisText').textContent = q.analysis || '（暂无解析）';
+    document.getElementById('analysisSrc').textContent = q.source ? '出处：' + q.source : '';
+    an.classList.add('show');
+    document.getElementById('btnNext').textContent = '下一题';
+  } else {
+    document.getElementById('btnNext').textContent = '跳过';
+  }
+}
+function showAnalysis(q) {
+  document.getElementById('analysisText').textContent = q.analysis || '（暂无解析）';
+  document.getElementById('analysisSrc').textContent = q.source ? '出处：' + q.source : '';
+  document.getElementById('qAnalysis').classList.add('show');
+}
+function choose(q, choice, btn, box) {
+  if (answered(lsGet(LS.record, {}), q.id)) return;
+  const rec = lsGet(LS.record, {});
+  rec[q.id] = { correct: choice === q.answer, t: Date.now() };
+  lsSet(LS.record, rec);
+  if (choice !== q.answer) {
+    const wr = lsGet(LS.wrong, []);
+    if (!wr.includes(q.id)) wr.push(q.id);
+    lsSet(LS.wrong, wr);
+  }
+  box.querySelectorAll('.option').forEach(b => b.disabled = true);
+  btn.classList.add(choice === q.answer ? 'correct' : 'wrong');
+  box.querySelectorAll('.option').forEach(b => {
+    if (b.textContent.trim().charAt(0).toUpperCase() + '.' === q.answer + '.') b.classList.add('correct');
+  });
+  showAnalysis(q);
+  document.getElementById('btnNext').textContent = '下一题';
+  renderStats();
+}
+function submitMulti() {
+  const q = quiz[qpos];
+  if (answered(lsGet(LS.record, {}), q.id)) return;
+  const right = Array.from(String(q.answer).split('')).sort().join('');
+  const picked = multiPicked.slice().sort().join('');
+  const correct = picked === right;
+  const rec = lsGet(LS.record, {});
+  rec[q.id] = { correct: correct, picked: multiPicked.slice(), t: Date.now() };
+  lsSet(LS.record, rec);
+  if (!correct) {
+    const wr = lsGet(LS.wrong, []);
+    if (!wr.includes(q.id)) wr.push(q.id);
+    lsSet(LS.wrong, wr);
+  }
+  const box = document.getElementById('qOptions');
+  box.querySelectorAll('.option').forEach(b => b.disabled = true);
+  box.querySelectorAll('.option').forEach(b => {
+    const L = b.textContent.trim().charAt(0).toUpperCase();
+    if (q.answer.includes(L)) b.classList.add('correct');
+    else if (multiPicked.includes(L)) b.classList.add('wrong');
+  });
+  document.getElementById('btnSubmitMulti').style.display = 'none';
+  const miss = right.split('').filter(L => !multiPicked.includes(L)).join('');
+  const over = multiPicked.filter(L => !right.includes(L)).join('');
+  let tip = '';
+  if (correct) tip = '✅ 全部选对，得 2 分';
+  else {
+    if (over) tip = '❌ 多选了 ' + over + '，不得分（本题答案 ' + right + '）';
+    else tip = '⚠️ 少选了 ' + miss + '，只得 0.5 分（本题答案 ' + right + '）';
+  }
+  showAnalysis(q);
+  const tt = document.createElement('div');
+  tt.id = 'multiResult';
+  tt.style.cssText = 'margin-top:8px;font-size:14px;font-weight:700;color:' + (correct ? 'var(--ok)' : 'var(--err)') + ';';
+  tt.textContent = tip;
+  document.getElementById('qAnalysis').insertBefore(tt, document.getElementById('qAnalysis').firstChild);
+  document.getElementById('btnNext').textContent = '下一题';
+  renderStats();
+}
+function showCaseAnswer() {
+  const q = quiz[qpos];
+  const an = document.getElementById('qAnalysis');
+  document.getElementById('analysisText').textContent = q.answer || q.analysis || '（本题暂无标准答案）';
+  document.getElementById('analysisSrc').textContent = q.source ? '出处：' + q.source : '';
+  an.classList.add('show');
+  document.getElementById('btnShowAns').style.display = 'none';
+  document.getElementById('btnNext').textContent = '下一题';
+}
+function nextQuestion() {
+  if (qpos < quiz.length - 1) { qpos++; renderQuestion(); }
+  else { toast('本次练习完成，可切换筛选继续刷题'); startQuiz(); }
+}
+function prevQuestion() {
+  if (qpos > 0) { qpos--; renderQuestion(); }
+}
+/* ========== 错题本 ========== */
+function renderWrong() {
+  const wr = lsGet(LS.wrong, []);
+  const box = document.getElementById('wrongList');
+  if (!wr.length) { box.innerHTML = '<div class="empty">暂无错题，很棒！继续保持 🎉</div>'; return; }
+  box.innerHTML = '<div style="font-size:14px;font-weight:700;margin-bottom:8px;">共 ' + wr.length + ' 道错题，点击重做</div>';
+  wr.forEach(id => {
+    const q = bank.find(x => x.id === id);
+    if (!q) return;
+    const d = document.createElement('div');
+    d.className = 'wrong-item';
+    const tag = qType(q);
+    const meta = (q.subject || '') + (q.year ? ' ' + q.year : '');
+    d.innerHTML = '<span style="flex:1;margin-right:10px;">[' + tag + ' ' + meta + '] ' + (q.question || '').slice(0, 26) + ((q.question || '').length > 26 ? '…' : '') + '</span>';
+    const b = document.createElement('button');
+    b.textContent = '重做';
+    b.onclick = () => {
+      filter.subject = q.subject || '全部';
+      filter.year = q.year !== undefined && q.year !== '' ? (q.year + '|' + (q.exam || '')) : 'all';
+      filter.type = qType(q);
+      buildFilters();
+      startQuiz();
+      const idx = quiz.findIndex(x => x.id === q.id);
+      if (idx >= 0) { qpos = idx; renderQuestion(); }
+      switchTab('quiz');
+    };
+    d.appendChild(b);
+    box.appendChild(d);
+  });
+}
+/* ========== 打卡 ========== */
+function todayStr() {
+  const d = new Date(); const p = n => (n < 10 ? '0' : '') + n;
+  return d.getFullYear() + '-' + p(d.getMonth() + 1) + '-' + p(d.getDate());
+}
+function streakDays() {
+  const list = lsGet(LS.checkins, []);
+  let streak = 0; const p = n => (n < 10 ? '0' : '') + n;
+  const d = new Date();
+  if (list.includes(todayStr())) { streak++; }
+  else { d.setDate(d.getDate() - 1); }
+  const fmt = dd => dd.getFullYear() + '-' + p(dd.getMonth() + 1) + '-' + p(dd.getDate());
+  if (!list.includes(todayStr())) { d.setDate(d.getDate() + 1); }
+  while (true) {
+    d.setDate(d.getDate() - 1);
+    if (list.includes(fmt(d))) streak++; else break;
+  }
+  return streak;
+}
+function doCheckin() {
+  const list = lsGet(LS.checkins, []);
+  const t = todayStr();
+  if (!list.includes(t)) { list.push(t); lsSet(LS.checkins, list); toast('打卡成功，坚持就是胜利！'); }
+  else { toast('今天已经打过卡啦'); }
+  renderCheckin();
+}
+function renderCheckin() {
+  const list = lsGet(LS.checkins, []);
+  const btn = document.getElementById('btnCheckin');
+  if (list.includes(todayStr())) { btn.textContent = '已打卡'; btn.classList.add('done'); }
+  else { btn.textContent = '今日打卡'; btn.classList.remove('done'); }
+  document.getElementById('streakText').textContent = '连续打卡 ' + streakDays() + ' 天';
+  const strip = document.getElementById('weekStrip');
+  strip.innerHTML = '';
+  const names = ['日', '一', '二', '三', '四', '五', '六'];
+  for (let i = 6; i >= 0; i--) {
+    const d = new Date(); d.setDate(d.getDate() - i);
+    const p = n => (n < 10 ? '0' : '') + n;
+    const ds = d.getFullYear() + '-' + p(d.getMonth() + 1) + '-' + p(d.getDate());
+    const on = list.includes(ds);
+    const cell = document.createElement('div');
+    cell.className = 'day';
+    cell.innerHTML = '<div class="dot' + (on ? ' on' : '') + '">' + (on ? '✓' : '') + '</div><div class="w-name">' + names[d.getDay()] + '</div>';
+    strip.appendChild(cell);
+  }
+}
+/* ========== 统计 ========== */
+function renderStats() {
+  const rec = lsGet(LS.record, {});
+  const ids = Object.keys(rec);
+  const correct = ids.filter(id => rec[id].correct).length;
+  document.getElementById('stTotal').textContent = bank.length;
+  document.getElementById('stAnswered').textContent = ids.length;
+  document.getElementById('stRate').textContent = ids.length ? Math.round(100 * correct / ids.length) + '%' : '—';
+  document.getElementById('stWrong').textContent = lsGet(LS.wrong, []).length;
+}
+/* ========== 导入题库 ========== */
+function importBank(e) {
+  const file = e.target.files[0];
+  if (!file) return;
+  const reader = new FileReader();
+  reader.onload = ev => {
+    try {
+      const data = JSON.parse(ev.target.result);
+      const arr = Array.isArray(data) ? data : (data.questions || []);
+      if (!arr.length) { toast('题库为空或格式不正确'); return; }
+      lsSet(LS.userBank, arr);
+      bank = arr;
+      filter = { subject: '全部', year: 'all', type: '全部' };
+      buildFilters(); startQuiz(); renderStats(); refreshBankInfo();
+      toast('题库导入成功：' + arr.length + ' 题');
+    } catch (err) { toast('导入失败：JSON 解析错误'); }
+  };
+  reader.readAsText(file, 'utf-8');
+  e.target.value = '';
+}
+/* ========== 清空已导入题库（回退内置题库） ========== */
+function clearImported() {
+  try { localStorage.removeItem(LS.userBank); } catch (e) {}
+  bank = getBank();
+  filter = { subject: '全部', year: 'all', type: '全部' };
+  buildFilters(); startQuiz(); renderStats(); refreshBankInfo();
+  toast('已恢复内置题库');
+}
+/* ========== Tab 切换 ========== */
+function switchTab(name) {
+  const map = { quiz: 'viewQuiz', wrong: 'viewWrong', stats: 'viewStats' };
+  ['quiz', 'wrong', 'stats'].forEach(k => {
+    document.getElementById('view' + k.charAt(0).toUpperCase() + k.slice(1)).style.display = k === name ? '' : 'none';
+  });
+  document.getElementById('tabQuiz').classList.toggle('active', name === 'quiz');
+  document.getElementById('tabWrong').classList.toggle('active', name === 'wrong');
+  document.getElementById('tabStats').classList.toggle('active', name === 'stats');
+  if (name === 'wrong') renderWrong();
+  if (name === 'stats') { renderStats(); renderCheckin(); }
+}
+/* ========== Toast ========== */
+let toastTimer = null;
+function toast(msg) {
+  const el = document.getElementById('toast');
+  el.textContent = msg; el.style.opacity = 1;
+  clearTimeout(toastTimer);
+  toastTimer = setTimeout(() => { el.style.opacity = 0; }, 1800);
+}
+/* ========== 初始化 ========== */
+function init() {
+  bank = getBank();
+  buildFilters();
+  startQuiz();
+  renderStats();
+  renderCheckin();
+  refreshBankInfo();
+}
+init();
+
+</script>
+</body>
+</html>
