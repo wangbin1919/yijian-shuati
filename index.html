@@ -817,7 +817,19 @@ function renderQuestion() {
   const isCase = t === '案例' || !Array.isArray(q.options) || q.options.length === 0;
   document.getElementById('qChapter').innerHTML = renderTypeTag(q) + '<span>' + qMeta(q) + '</span>';
   document.getElementById('qIndex').textContent = (qpos + 1) + ' / ' + quiz.length;
-  document.getElementById('qText').textContent = q.question;
+  const qTextEl = document.getElementById('qText');
+  qTextEl.textContent = q.question;
+  if (q.image) {
+    const img = document.createElement('img');
+    img.src = q.image;
+    img.style.maxWidth = '100%';
+    img.style.marginTop = '12px';
+    img.style.display = 'block';
+    img.style.borderRadius = '4px';
+    img.onerror = function() { this.style.display='none'; };
+    qTextEl.appendChild(document.createElement('br'));
+    qTextEl.appendChild(img);
+  }
   const box = document.getElementById('qOptions');
   box.innerHTML = '';
   const an = document.getElementById('qAnalysis');
