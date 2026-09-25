@@ -78,7 +78,7 @@
       <div style="font-size:14px;color:#2E7D32;font-weight:700;margin-bottom:8px;">一建刷题题库 · 网页版</div>
       <a href="https://wangbin1919.github.io/yijian-shuati/" target="_blank" style="display:inline-block;background:#4CAF50;color:#fff;padding:10px 24px;border-radius:20px;text-decoration:none;font-size:14px;font-weight:700;">直接点击打开题库</a>
       <div style="font-size:11px;color:#558B2F;margin-top:6px;">建议添加到手机桌面，随时刷题</div>
-      <div style="font-size:12px;color:#E65100;font-weight:700;margin-top:8px;background:#FFF3E0;padding:4px 10px;border-radius:12px;display:inline-block;">全量题库免费开放，无需解锁，无限刷题</div>
+      <div style="font-size:12px;color:#E65100;font-weight:700;margin-top:8px;background:#FFF3E0;padding:4px 10px;border-radius:12px;display:inline-block;">免费试刷30题，解锁完整题库无限刷题</div>
     </div>
     <div class="card">
       <select id="subjectSel" class="chapter-select" onchange="onFilterChange('subject')"></select>
@@ -694,6 +694,7 @@ let qpos = 0;           // 当前题目下标
 let mode = 'seq';       // seq | rnd
 let filter = { subject: '全部', year: 'all', type: '全部' };
 let multiPicked = [];   // 多选题已选项
+const FREE_LIMIT = 30;  // 免费试刷题数限制
 
 function getBank() {
   const ub = lsGet(LS.userBank, null);
@@ -923,8 +924,18 @@ function showAnalysis(q) {
   document.getElementById('analysisSrc').textContent = q.source ? '出处：' + q.source : '';
   document.getElementById('qAnalysis').classList.add('show');
 }
+function checkFreeLimit() {
+  const rec = lsGet(LS.record, {});
+  const count = Object.keys(rec).length;
+  if (count >= FREE_LIMIT) {
+    toast('免费试刷30题已用完，解锁完整题库可继续刷题');
+    return false;
+  }
+  return true;
+}
 function choose(q, choice, btn, box) {
   if (answered(lsGet(LS.record, {}), q.id)) return;
+  if (!checkFreeLimit()) return;
   const rec = lsGet(LS.record, {});
   rec[q.id] = { correct: choice === q.answer, t: Date.now() };
   lsSet(LS.record, rec);
@@ -945,6 +956,7 @@ function choose(q, choice, btn, box) {
 function submitMulti() {
   const q = quiz[qpos];
   if (answered(lsGet(LS.record, {}), q.id)) return;
+  if (!checkFreeLimit()) return;
   const right = Array.from(String(q.answer).split('')).sort().join('');
   const picked = multiPicked.slice().sort().join('');
   const correct = picked === right;
@@ -982,6 +994,7 @@ function submitMulti() {
   renderStats();
 }
 function submitCaseAnswer(q) {
+  if (!checkFreeLimit()) return;
   const ta = document.getElementById('caseAnswerInput');
   const userAns = ta ? ta.value.trim() : '';
   const rec = lsGet(LS.record, {});
