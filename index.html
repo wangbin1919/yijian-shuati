@@ -74,7 +74,13 @@
 </nav>
 <main>
   <section id="viewQuiz">
-<div class="card">
+    <div class="card" id="linkCard" style="text-align:center;background:linear-gradient(135deg,#E8F5E9,#C8E6C9);border:1.5px solid #4CAF50;">
+      <div style="font-size:14px;color:#2E7D32;font-weight:700;margin-bottom:8px;">一建刷题题库 · 网页版</div>
+      <a href="https://wangbin1919.github.io/yijian-shuati/" target="_blank" style="display:inline-block;background:#4CAF50;color:#fff;padding:10px 24px;border-radius:20px;text-decoration:none;font-size:14px;font-weight:700;">直接点击打开题库</a>
+      <div style="font-size:11px;color:#558B2F;margin-top:6px;">建议添加到手机桌面，随时刷题</div>
+      <div style="font-size:12px;color:#E65100;font-weight:700;margin-top:8px;background:#FFF3E0;padding:4px 10px;border-radius:12px;display:inline-block;">全量题库免费开放，无需解锁，无限刷题</div>
+    </div>
+    <div class="card">
       <select id="subjectSel" class="chapter-select" onchange="onFilterChange('subject')"></select>
       <div style="display:flex;gap:8px;margin-top:8px;">
         <select id="yearSel" class="chapter-select" onchange="onFilterChange('year')" style="flex:1;"></select>
@@ -840,7 +846,28 @@ function renderQuestion() {
   const isAnswered = answered(rec, q.id);
 
   if (isCase) {
-    document.getElementById('btnShowAns').style.display = '';
+    const box = document.getElementById('qOptions');
+    const rec = lsGet(LS.record, {});
+    const isAnswered = answered(rec, q.id);
+    // 案例题答题区
+    const ta = document.createElement('textarea');
+    ta.id = 'caseAnswerInput';
+    ta.placeholder = '请在此输入你的答案要点...';
+    ta.style.cssText = 'width:100%;min-height:120px;padding:12px;border:1.5px solid #DDD;border-radius:8px;font-size:15px;line-height:1.6;font-family:inherit;resize:vertical;box-sizing:border-box;';
+    if (isAnswered && rec[q.id].userAnswer) {
+      ta.value = rec[q.id].userAnswer;
+      ta.readOnly = true;
+      ta.style.background = '#F5F5F5';
+    }
+    box.appendChild(ta);
+    if (!isAnswered) {
+      document.getElementById('btnShowAns').style.display = '';
+      document.getElementById('btnShowAns').textContent = '提交答案并查看解析';
+      document.getElementById('btnShowAns').onclick = () => submitCaseAnswer(q);
+    } else {
+      document.getElementById('btnShowAns').style.display = 'none';
+      showCaseAnswer();
+    }
     document.getElementById('btnNext').textContent = '下一题';
     return;
   }
@@ -954,10 +981,28 @@ function submitMulti() {
   document.getElementById('btnNext').textContent = '下一题';
   renderStats();
 }
+function submitCaseAnswer(q) {
+  const ta = document.getElementById('caseAnswerInput');
+  const userAns = ta ? ta.value.trim() : '';
+  const rec = lsGet(LS.record, {});
+  rec[q.id] = { correct: true, userAnswer: userAns, t: Date.now() };
+  lsSet(LS.record, rec);
+  showCaseAnswer();
+  if (ta) { ta.readOnly = true; ta.style.background = '#F5F5F5'; }
+  document.getElementById('btnShowAns').style.display = 'none';
+  renderStats();
+}
 function showCaseAnswer() {
   const q = quiz[qpos];
   const an = document.getElementById('qAnalysis');
-  document.getElementById('analysisText').textContent = q.answer || q.analysis || '（本题暂无标准答案）';
+  const rec = lsGet(LS.record, {});
+  const r = rec[q.id];
+  let ansText = '';
+  if (r && r.userAnswer) {
+    ansText = '【我的答案】\n' + r.userAnswer + '\n\n';
+  }
+  ansText += '【参考答案】\n' + (q.answer || q.analysis || '（本题暂无标准答案）');
+  document.getElementById('analysisText').textContent = ansText;
   document.getElementById('analysisSrc').textContent = q.source ? '出处：' + q.source : '';
   an.classList.add('show');
   document.getElementById('btnShowAns').style.display = 'none';
