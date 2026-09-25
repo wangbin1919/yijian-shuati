@@ -56,6 +56,16 @@
   .import-bar { margin-top:10px; display:flex; gap:8px; align-items:center; }
   .import-bar label { flex:1; padding:9px; border:1.5px dashed #BBB; border-radius:8px; text-align:center; font-size:13px; color:var(--muted); cursor:pointer; }
   .toast { position:fixed; left:50%; bottom:90px; transform:translateX(-50%); background:rgba(0,0,0,.8); color:#fff; padding:9px 18px; border-radius:20px; font-size:13px; z-index:99; opacity:0; transition:opacity .3s; pointer-events:none; }
+  .modal { position:fixed; left:0; top:0; width:100%; height:100%; z-index:100; display:flex; align-items:center; justify-content:center; }
+  .modal-bg { position:absolute; left:0; top:0; width:100%; height:100%; background:rgba(0,0,0,.55); }
+  .modal-box { position:relative; background:#fff; border-radius:16px; padding:24px; max-width:320px; width:88%; text-align:center; box-shadow:0 8px 32px rgba(0,0,0,.2); animation:modalIn .25s ease-out; }
+  @keyframes modalIn { from { transform:scale(.85); opacity:0; } to { transform:scale(1); opacity:1; } }
+  .modal-box h3 { font-size:18px; margin:0 0 10px; color:var(--text); }
+  .modal-box p { font-size:14px; color:var(--muted); margin:0 0 14px; line-height:1.6; }
+  .price-line { font-size:13px; color:#555; margin-bottom:18px; }
+  .price-line .price { font-size:28px; font-weight:700; color:var(--err); }
+  .btn-pay { display:block; width:100%; background:var(--ok); color:#fff; border:none; border-radius:10px; padding:12px; font-size:15px; font-weight:700; cursor:pointer; margin-bottom:10px; }
+  .btn-close { display:block; width:100%; background:#f0f0f0; color:#555; border:none; border-radius:10px; padding:10px; font-size:13px; cursor:pointer; }
 </style>
 </head>
 <body>
@@ -133,6 +143,17 @@
   </section>
 </main>
 <div class="toast" id="toast"></div>
+<!-- 付费解锁弹窗 -->
+<div id="payModal" class="modal" style="display:none;">
+  <div class="modal-bg" onclick="closePayModal()"></div>
+  <div class="modal-box">
+    <h3>免费试刷已用完</h3>
+    <p>你已体验 <strong>30</strong> 道真题，解锁完整题库即可继续刷题。</p>
+    <div class="price-line"><span class="price">69</span> 元 / 全科 · 用到考试结束</div>
+    <button class="btn-pay" onclick="unlockFull()">立即解锁全科</button>
+    <button class="btn-close" onclick="closePayModal()">暂不购买</button>
+  </div>
+</div>
 <script>
 /* ========== AI 题库 H5 原型：默认题库（由流水线注入，替换占位符生成） ========== */
 const DEFAULT_BANK = (
@@ -685,7 +706,8 @@ const LS = {
   userBank: 'yj08_userBank',
   record: 'yj08_record',
   wrong: 'yj08_wrong',
-  checkins: 'yj08_checkins'
+  checkins: 'yj08_checkins',
+  freeCount: 'yj08_freeCount'
 };
 function lsGet(k, def) { try { const v = localStorage.getItem(k); return v ? JSON.parse(v) : def; } catch (e) { return def; } }
 function lsSet(k, v) { try { localStorage.setItem(k, JSON.stringify(v)); } catch (e) { /* ignore */ } }
@@ -928,12 +950,27 @@ function showAnalysis(q) {
 }
 function checkFreeLimit() {
   const rec = lsGet(LS.record, {});
-  const count = Object.keys(rec).length;
+  const freeCount = lsGet(LS.freeCount, 0);
+  // 按已作答数与独立计数器的较大值计算（兼容老用户）
+  const count = Math.max(Object.keys(rec).length, freeCount);
   if (count >= FREE_LIMIT) {
-    toast('免费试刷30题已用完，解锁完整题库可继续刷题');
+    showPayModal();
     return false;
   }
   return true;
+}
+function showPayModal() {
+  const el = document.getElementById('payModal');
+  if (el) el.style.display = 'flex';
+}
+function closePayModal() {
+  const el = document.getElementById('payModal');
+  if (el) el.style.display = 'none';
+}
+function unlockFull() {
+  // 付费解锁入口 —— 此处接入收款与激活逻辑
+  toast('解锁功能开发中，请联系客服获取激活码');
+  closePayModal();
 }
 function choose(q, choice, btn, box) {
   if (answered(lsGet(LS.record, {}), q.id)) return;
@@ -941,6 +978,7 @@ function choose(q, choice, btn, box) {
   const rec = lsGet(LS.record, {});
   rec[q.id] = { correct: choice === q.answer, t: Date.now() };
   lsSet(LS.record, rec);
+  lsSet(LS.freeCount, lsGet(LS.freeCount, 0) + 1);
   if (choice !== q.answer) {
     const wr = lsGet(LS.wrong, []);
     if (!wr.includes(q.id)) wr.push(q.id);
@@ -965,6 +1003,7 @@ function submitMulti() {
   const rec = lsGet(LS.record, {});
   rec[q.id] = { correct: correct, picked: multiPicked.slice(), t: Date.now() };
   lsSet(LS.record, rec);
+  lsSet(LS.freeCount, lsGet(LS.freeCount, 0) + 1);
   if (!correct) {
     const wr = lsGet(LS.wrong, []);
     if (!wr.includes(q.id)) wr.push(q.id);
@@ -1002,6 +1041,7 @@ function submitCaseAnswer(q) {
   const rec = lsGet(LS.record, {});
   rec[q.id] = { correct: true, userAnswer: userAns, t: Date.now() };
   lsSet(LS.record, rec);
+  lsSet(LS.freeCount, lsGet(LS.freeCount, 0) + 1);
   showCaseAnswer();
   if (ta) { ta.readOnly = true; ta.style.background = '#F5F5F5'; }
   document.getElementById('btnShowAns').style.display = 'none';
