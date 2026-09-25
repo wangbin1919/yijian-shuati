@@ -707,7 +707,8 @@ const LS = {
   record: 'yj08_record',
   wrong: 'yj08_wrong',
   checkins: 'yj08_checkins',
-  freeCount: 'yj08_freeCount'
+  freeCount: 'yj08_freeCount',
+  unlocked: 'yj08_unlocked'
 };
 function lsGet(k, def) { try { const v = localStorage.getItem(k); return v ? JSON.parse(v) : def; } catch (e) { return def; } }
 function lsSet(k, v) { try { localStorage.setItem(k, JSON.stringify(v)); } catch (e) { /* ignore */ } }
@@ -839,8 +840,22 @@ function renderTypeTag(q) {
   const isCase = t === '案例' || !Array.isArray(q.options) || q.options.length === 0;
   return '<span class="type-tag' + (isCase ? ' case' : '') + '">' + t + '</span>';
 }
+function isUnlocked() {
+  return lsGet(LS.unlocked, false) === true;
+}
+function getAnsweredCount() {
+  const rec = lsGet(LS.record, {});
+  const freeCount = lsGet(LS.freeCount, 0);
+  return Math.max(Object.keys(rec).length, freeCount);
+}
 function renderQuestion() {
   if (!quiz.length) return;
+  const answeredCount = getAnsweredCount();
+  // 超过免费额度且未解锁：显示付费遮罩，阻断题目渲染
+  if (answeredCount >= FREE_LIMIT && !isUnlocked()) {
+    renderPayWall();
+    return;
+  }
   const oldtt = document.getElementById('multiResult');
   if (oldtt) oldtt.remove();
   const q = quiz[qpos];
@@ -1062,6 +1077,19 @@ function showCaseAnswer() {
   an.classList.add('show');
   document.getElementById('btnShowAns').style.display = 'none';
   document.getElementById('btnNext').textContent = '下一题';
+}
+function renderPayWall() {
+  document.getElementById('qText').innerHTML = '<div style="text-align:center;padding:40px 20px;"><div style="font-size:18px;font-weight:700;margin-bottom:16px;color:var(--text);">免费试刷 30 题已用完</div><div style="font-size:14px;color:var(--muted);margin-bottom:24px;line-height:1.7;">你已体验 30 道真题，解锁完整题库即可继续刷题。<br>5059 道题 · 12 个科目 · 近十年真题全覆盖</div><div style="font-size:28px;font-weight:700;color:var(--err);margin-bottom:6px;">69<span style="font-size:14px;font-weight:400;color:#555;"> 元 / 全科</span></div><div style="font-size:12px;color:#888;margin-bottom:20px;">一次购买 · 用到考试结束 · 包含所有更新</div><button onclick="unlockFull()" style="display:block;width:100%;max-width:280px;margin:0 auto 12px;background:var(--ok);color:#fff;border:none;border-radius:10px;padding:14px;font-size:15px;font-weight:700;cursor:pointer;">立即解锁全科</button><button onclick="closePayWall()" style="display:block;width:100%;max-width:280px;margin:0 auto;background:#f0f0f0;color:#555;border:none;border-radius:10px;padding:10px;font-size:13px;cursor:pointer;">暂不购买</button></div>';
+  document.getElementById('qOptions').innerHTML = '';
+  document.getElementById('qAnalysis').classList.remove('show');
+  document.getElementById('btnSubmitMulti').style.display = 'none';
+  document.getElementById('btnShowAns').style.display = 'none';
+  document.getElementById('btnNext').textContent = '';
+}
+function closePayWall() {
+  // 暂不购买：回到首页或切换功能
+  switchTab('quiz');
+  toast('免费额度已用完，可在「统计」页查看学习进度');
 }
 function nextQuestion() {
   if (qpos < quiz.length - 1) { qpos++; renderQuestion(); }
